@@ -33,7 +33,11 @@ flowchart TD
     I -- no / changes --> F
     I -- yes --> J[Implement section I, add tests]
     J --> K[Validate: tests, lint, build, diff review]
-    K --> L[Final report. Nothing committed]
+    K --> M{Fix complete and<br/>checks passed?}
+    M -- yes --> N[Delete the investigation report]
+    M -- no --> O[Keep the report]
+    N --> L[Final report. Nothing committed]
+    O --> L
 ```
 
 1. You describe a bug in natural language, or share a GitHub, GitLab, Jira, or other ticket.
@@ -44,6 +48,7 @@ flowchart TD
 6. You ask for the fix. Claude invokes `fix-bug`, which reads the saved report from disk and checks it against the current code.
 7. **Gate 2:** Claude shows the exact files it will change and asks you to approve implementation.
 8. Claude implements the approved scope with tests, validates it, and reports the results. It never commits or pushes on its own.
+9. If the fix is complete and the required checks pass, Claude deletes the investigation report. It keeps the report if the work is partial or failing, or if you ask it to.
 
 ## Using the skills
 
@@ -56,7 +61,7 @@ Claude Code shows Claude each installed skill's description and loads a skill wh
 | "The click event isn't firing for video ads. Can you investigate?" | `investigate-bug` runs, presents a report, and asks Gate 1. |
 | "Why does the export button do nothing on Safari?" | `investigate-bug` runs. |
 | "Here's the ticket: `https://github.com/acme/shop/issues/482`" | `investigate-bug` fetches the issue with `gh` and investigates. |
-| "Implement the approved fix in the investigation report." | `fix-bug` reads the report, confirms the scope, and asks Gate 2 unless you've already explicitly approved. |
+| "Implement the approved fix in the investigation report." | `fix-bug` reads the report, confirms the scope, and asks Gate 2. Your request to implement is never treated as Gate 2 itself. |
 | "Investigate this issue and fix it." | `investigate-bug` runs first and stops at Gate 1. The fix waits for Gate 2. |
 | "Fix the crash on logout." (no report saved yet) | No files are changed. Claude explains that a fix needs a reviewed report and offers to investigate first. |
 | "Look at the login thing." (unclear) | Claude asks whether you want an investigation or an implementation. |
@@ -96,7 +101,7 @@ If a ticket can't be fetched, Claude tells you why and what would fix it, and as
 | :- | :- | :- | :- |
 | Diagnostic | `investigate-bug` | One state-changing diagnostic, such as a test run that writes build output | Saving the report or any code change |
 | **Gate 1** | `investigate-bug` | Writing `<bug-title>-investigation-report.md` to the repository root | Implementation |
-| **Gate 2** | `fix-bug` | Changing the files listed in the report's section I, plus their tests | Anything outside section I, new dependencies, unapproved API changes, commits |
+| **Gate 2** | `fix-bug` | Changing the files listed in the report's section I, plus their tests, and deleting the report after a complete, validated fix | Anything outside section I, new dependencies, unapproved API changes, commits |
 | Deviation | `fix-bug` | One specific change of plan, shown with evidence | Anything else |
 
 Approval must be explicit and in your own words: "yes, save it", "approved, implement it". Replies like "looks good" or "ok" on their own are treated as review comments, and Claude asks you to confirm. Automatic invocation, slash commands, and earlier approvals never count as implementation approval.
@@ -121,7 +126,7 @@ It explains the evidence, offers options, and waits.
 
 ## The investigation report
 
-The report is Markdown, saved as `<bug-title>-investigation-report.md` (lowercase kebab-case) at the repository root, and only after Gate 1. It follows [`templates/investigation-report.md`](templates/investigation-report.md):
+The report is Markdown, saved as `<bug-title>-investigation-report.md` (lowercase kebab-case) at the repository root, and only after Gate 1. It follows [`skills/investigate-bug/templates/investigation-report.md`](skills/investigate-bug/templates/investigation-report.md):
 
 | Section | Contents |
 | :- | :- |
@@ -138,6 +143,8 @@ The report is Markdown, saved as `<bug-title>-investigation-report.md` (lowercas
 | J. Developer review checklist | A checklist for your review |
 
 Edit section I to change what gets implemented. `fix-bug` always reads the saved file, so your edits take effect. The base commit SHA lets `fix-bug` detect code that changed after the investigation.
+
+**The report is temporary.** After a complete fix whose required checks pass, `fix-bug` deletes it. If the report is untracked, the deletion is permanent, so commit it, copy it, or tell Claude "keep the report" if you want a record. A partial, blocked, or failing fix always keeps the report.
 
 ## Install, update, and remove
 
@@ -169,6 +176,19 @@ To use it only in one repository, choose project or local scope in the panel, or
 
 If you don't have a GitHub SSH key and adding the marketplace or installing fails, set `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` and try again.
 
+### Install with skills.sh (Claude Code and other agents)
+
+The skills are self-contained, so they also install as standalone skills through [skills.sh](https://skills.sh) (requires Node.js 22.20 or later):
+
+```bash
+npx skills add sakib-shadman/bug-workflow           # this project
+npx skills add sakib-shadman/bug-workflow -g        # all your projects
+```
+
+For Claude Code this installs into `.claude/skills/` (or `~/.claude/skills/` with `-g`). Standalone skills aren't namespaced, so the commands are `/investigate-bug` and `/fix-bug`. Update with `npx skills update` and remove with `npx skills remove`. The skills.sh CLI sends anonymous install telemetry; set `DISABLE_TELEMETRY=1` to opt out.
+
+Use one install method, not both, or Claude sees two copies of each skill.
+
 ### Update
 
 Auto-update is off by default for third-party marketplaces. Either:
@@ -191,7 +211,7 @@ In a session, `/plugin uninstall` and the **Installed** tab in `/plugin` do the 
 ## Limitations
 
 - **Automatic invocation is model-driven.** Claude picks a skill by matching your request to the skill descriptions. In the bundled evals (5 prompts, 3 runs each), every bug report and fix request triggered the right skill and the unrelated request triggered neither, but unusual phrasing may behave differently. Use the slash command when you need certainty. If you have many skills installed, Claude Code may shorten skill descriptions to fit its listing budget, which can reduce matching. `/doctor` shows the listing cost.
-- **Commands are namespaced.** The supported form is `/bug-workflow:<skill>`. Claude Code may also accept a bare `/investigate-bug` or `/fix-bug` when no other command uses that name. That isn't guaranteed, so documentation and examples use the namespaced form.
+- **Commands are namespaced when installed as a plugin.** The supported form is `/bug-workflow:<skill>`. With skills.sh, the commands are `/investigate-bug` and `/fix-bug`. Claude Code may also accept a bare `/investigate-bug` or `/fix-bug` when no other command uses that name. That isn't guaranteed, so documentation and examples use the namespaced form.
 - **Read-only is enforced by instructions, not a sandbox.** `investigate-bug` is told not to modify files, and Claude Code still applies your permission mode to every tool call. For a hard guarantee, run the investigation in plan mode (Shift+Tab). You'll need to leave plan mode for Gate 1 to save the report.
 - **Gates are conversational.** Approvals are read from your messages, not from a UI button. Be explicit when you approve.
 - **Long sessions.** After context compaction, Claude Code keeps the start of each invoked skill. The critical rules are at the top of each skill, but if behavior drifts in a very long session, invoke the skill again.

@@ -13,12 +13,13 @@ The input should name an investigation report at the repository root. If it's em
 
 ## Non-negotiable rules
 
-1. **No edits before Gate 2.** Don't modify, create, or delete any file until the developer has explicitly approved implementing *this* report's section I in a message of their own. Invoking this skill, by name or automatically, is not approval. Neither is approval to investigate, run a diagnostic, save the report, or a review comment like "looks good".
+1. **No edits before Gate 2.** Don't modify, create, or delete any file until the developer has explicitly approved implementing *this* report's section I, in a message sent after you showed them the scope. Invoking this skill, by name or automatically, is not approval. Neither is approval to investigate, run a diagnostic, save the report, or a review comment like "looks good".
 2. **The saved report is the contract.** Read it from disk every time. The developer's edits to it are authoritative; never substitute an earlier version from the conversation.
 3. **Stay in scope.** Implement section I and nothing else. Stop and ask before any deviation.
 4. **Never commit or push.** Leave all changes uncommitted unless the developer explicitly asks.
+5. **Delete the report only after a complete fix.** Once the fix is complete and validated, delete the report file you implemented (section 7). Keep it if the work is partial, blocked, or failing, or if the developer asks to keep it.
 
-Before anything else, read the shared rules at `${CLAUDE_PLUGIN_ROOT}/references/workflow-rules.md`. They define the approval gates, Git safety, and evidence labels used below.
+Before anything else, read the shared rules at `${CLAUDE_SKILL_DIR}/references/workflow-rules.md`. They define the approval gates, Git safety, and evidence labels used below.
 
 ## 1. Find the report
 
@@ -53,6 +54,7 @@ Present a short scope confirmation:
 - Every file you will modify, create, or delete (from section I), and the tests you will add or update.
 - The explicitly excluded scope.
 - The validation commands you plan to run.
+- That after a complete, validated fix you will delete the report file (give its path), unless the developer asks to keep it.
 - Verification results from step 2, including pre-existing changes in any affected file.
 
 Then ask:
@@ -61,7 +63,7 @@ Then ask:
 
 Stop and wait.
 
-- **Already approved**: if the developer's own message already gave explicit approval to implement this report (for example "implement `x-investigation-report.md`, you're approved to modify files"), and step 2 found no discrepancy, present the scope confirmation and proceed without asking again.
+- **Never skip this gate.** Gate 2 approval must come in a developer message sent *after* you presented this scope confirmation. The request that started this skill ("fix it", "implement the report", "investigate and fix", even "implement the approved fix") is not Gate 2, however it's worded. Present the scope, ask, and end your turn without editing.
 - **Ambiguous reply**: ask a clarifying question. Don't proceed.
 - **Contradictory contract**: if section I contradicts itself, or you offered options, the approval must say how the contradiction is resolved or which option to use. An approval that doesn't is ambiguous. Ask again and don't implement any part of it.
 - **Changes requested**: if they changed the report on disk, go back to step 2. If they gave instructions only in chat that change section I, ask them to update the report or confirm that the chat instruction amends it, then repeat this gate.
@@ -107,12 +109,24 @@ Run what the project supports, starting narrow:
 
 Before running a command, check whether it rewrites generated files, lockfiles, or project files, and avoid or flag that. Separate failures your change caused from pre-existing failures and environment limits. Confirm a failure is pre-existing (for example the same test fails on a clean checkout of the base) before calling it that. Report exact commands and real results. Never report a check as passed if you didn't run it.
 
-## 7. Final implementation report
+## 7. Delete the investigation report
+
+The report has served its purpose once the fix is in. Delete it only if all of these hold:
+
+- every change in section I was implemented, and any deviations were approved;
+- the required validation checks from section I ran and passed, apart from failures you confirmed were pre-existing;
+- the developer hasn't asked to keep the report.
+
+If they hold, delete exactly the report file you read in step 1, for example with `rm -- "<repository root>/<name>-investigation-report.md"`. Delete nothing else. Check `git ls-files --error-unmatch <report>` first: if the report is tracked, the deletion shows up as a working-tree change the developer can restore with Git; if it's untracked, the deletion is permanent, so say so in the final report.
+
+If any condition fails, keep the report and explain why in the final report. It still holds the contract for finishing the work.
+
+## 8. Final implementation report
 
 Report, in this order:
 
 1. **Summary of the fix.**
-2. **Files changed**: every modified, created, or deleted file and its purpose.
+2. **Files changed**: every modified, created, or deleted file and its purpose, including whether the investigation report was deleted or kept, and why.
 3. **Design decisions**, including small details you resolved yourself.
 4. **Tests executed**: commands and actual results.
 5. **Build, lint, and static analysis**: commands and actual results, or why they weren't run.

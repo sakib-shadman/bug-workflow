@@ -110,7 +110,7 @@ flowchart TD
 
 ## I. Approved implementation specification
 
-> This section is the implementation contract for `fix-bug`. Edit it freely before approving; the saved file is authoritative. Saving the report does not approve implementation. Approval is given separately when `fix-bug` asks for it.
+> This section is the implementation contract for `fix-bug`. Edit it freely before approving; the saved file is authoritative. Saving the report does not approve implementation. Approval is given separately when `fix-bug` asks for it. After a complete, validated fix, `fix-bug` deletes this file unless you ask to keep it.
 
 - **Selected solution:** {{option name and one-paragraph summary}}
 - **Approved source changes:**

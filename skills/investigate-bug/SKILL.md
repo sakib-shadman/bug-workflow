@@ -17,7 +17,7 @@ If the input is empty, use the bug described in the conversation.
 2. **Present before saving.** Show the full report in the conversation first. Write it to disk only after the developer explicitly approves saving it (Gate 1).
 3. **Stop after saving.** Saving the report does not approve implementation. Never start `fix-bug` or edit source files from this skill, even if the developer asked to "investigate and fix".
 
-Before anything else, read the shared rules at `${CLAUDE_PLUGIN_ROOT}/references/workflow-rules.md`. They define the approval gates, Git safety, and evidence labels used below.
+Before anything else, read the shared rules at `${CLAUDE_SKILL_DIR}/references/workflow-rules.md`. They define the approval gates, Git safety, and evidence labels used below.
 
 ## 1. Orient
 
@@ -60,7 +60,7 @@ Use subagents for broad searches if available, but verify their findings yoursel
 
 ## 4. Write the report
 
-Fill in the template at `${CLAUDE_PLUGIN_ROOT}/templates/investigation-report.md`. Keep every section, A through J, in order. Write "None" or "Not applicable" rather than deleting a section.
+Fill in the template at `${CLAUDE_SKILL_DIR}/templates/investigation-report.md`. Keep every section, A through J, in order. Write "None" or "Not applicable" rather than deleting a section.
 
 - Filename: `<bug-title>-investigation-report.md`, where `<bug-title>` is a short lowercase kebab-case slug of the bug title (for example `checkout-total-nan-with-coupon-investigation-report.md`). If a file with that name already exists at the repository root, choose a distinct slug and mention it. Never overwrite an existing report.
 - Fill the header: base commit SHA, branch, working-tree state, date, and ticket access result. `fix-bug` uses the base commit to detect drift.
@@ -86,6 +86,6 @@ Fill in the template at `${CLAUDE_PLUGIN_ROOT}/templates/investigation-report.md
 
 Confirm the exact absolute path of the saved file, then end with:
 
-> The report is saved. Review and edit it as needed. Your edits are authoritative. When you want the fix implemented, ask me to implement it or run `/bug-workflow:fix-bug <report-filename>`. I won't modify any other files until you explicitly approve implementation.
+> The report is saved. Review and edit it as needed. Your edits are authoritative. When you want the fix implemented, ask me to implement it or run `/bug-workflow:fix-bug <report-filename>` (`/fix-bug` if the skills are installed standalone). I won't modify any other files until you explicitly approve implementation. After a complete, validated fix, `fix-bug` deletes this report unless you ask to keep it.
 
 Don't start implementation in this turn, even if the original request was "investigate and fix".

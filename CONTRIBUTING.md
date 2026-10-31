@@ -46,7 +46,10 @@ If you also have the published plugin installed, disable it while you test (`cla
 
    Add a case under `evals/` for any new behavior you rely on.
 
-3. **Keep the rules in one place.** Routing, gates, Git safety, and evidence labels live in `references/workflow-rules.md`. Skills summarize the non-negotiable rules at the top and link to that file. Don't add conflicting copies elsewhere.
+3. **Keep each skill self-contained.** Every skill must work both as part of the plugin and when installed standalone (for example with `npx skills add`). So:
+   - Files a skill reads live inside its own folder and are referenced with `${CLAUDE_SKILL_DIR}`, never `${CLAUDE_PLUGIN_ROOT}`.
+   - Routing, gates, Git safety, and evidence labels live in `skills/investigate-bug/references/workflow-rules.md`, the canonical copy. `skills/fix-bug/references/workflow-rules.md` must be identical. Edit the canonical file, copy it over, and run `scripts/check-shared-files.sh` (CI runs it too).
+   - Skills summarize the non-negotiable rules at the top and link to the rules file. Don't add conflicting copies elsewhere.
 
 4. **Keep examples generic.** No company names, proprietary SDKs, internal URLs, or personal data.
 

@@ -1,0 +1,23 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shared-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shared skill files are in sync
+        run: scripts/check-shared-files.sh
+      - name: Manifest and skill frontmatter are valid JSON/YAML
+        run: |
+          python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
+          for f in skills/*/SKILL.md; do
+            head -1 "$f" | grep -qx -- '---' || { echo "$f: missing frontmatter"; exit 1; }
+          done
