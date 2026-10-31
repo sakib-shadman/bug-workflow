@@ -1,0 +1,7 @@
+# claude plugin eval output
+evals/results/
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/

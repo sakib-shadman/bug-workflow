@@ -1,0 +1,14 @@
+{
+  "name": "bug-workflow",
+  "displayName": "Bug Workflow",
+  "version": "1.0.0",
+  "description": "Two skills that work together: investigate-bug traces a bug to its root cause without changing files and writes an evidence-based report; fix-bug implements the approved report after explicit approval.",
+  "author": {
+    "name": "Shadman Sakib",
+    "url": "https://github.com/sakib-shadman"
+  },
+  "homepage": "https://github.com/sakib-shadman/bug-workflow#readme",
+  "repository": "https://github.com/sakib-shadman/bug-workflow",
+  "license": "MIT",
+  "keywords": ["debugging", "bug-fix", "root-cause", "investigation", "approval-gates"]
+}
